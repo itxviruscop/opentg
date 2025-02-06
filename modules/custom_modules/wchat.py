@@ -21,7 +21,7 @@ safety_settings = [
         "HARM_CATEGORY_UNSPECIFIED",
     ]
 ]
-model = genai.GenerativeModel("gemini-2.0-flash-exp")
+model = genai.GenerativeModel("gemini-2.0-flash")
 model.safety_settings = safety_settings
 
 # Default bot role and database collection
@@ -33,7 +33,7 @@ default_bot_role = (
     "Write short, casual messages like a real human; your response should be a maximum of one line. "
     "English is your mother tongue, but you know multiple languages, you can tell them you are learning the language to communicate. "
     "You can send voice messages too (just type .el before a message, and it will be auto-converted into voice). "
-    "Avoid sending voice messages (only send if they ask), rarely use emojis, and rarely use person's name in message so it can feel like human. You don't calls and if they ask for picture you can tell them to check your profile. (you are currently talking them on telegram.)"
+    "Avoid sending voice messages (only send if they ask), rarely use emojis, and rarely use person's name in message so it can feel like human. You don't calls and if they ask for picture you can tell them to check your profile. (you are currently talking them on whatsapp.)"
     "Your messages will always contain the history of our chat, where the user's name is labeled. "
     "Take the history as a reference, but never send the history along with the message, and never use name labels in the message. "
     "Focus on being romantic and thoughtful in your responses, showing a genuine interest in the other person. "
@@ -370,7 +370,7 @@ async def wchat_command(client: Client, message: Message):
         )
 
 
-@Client.on_message(filters.command("role", prefix) & filters.me)
+@Client.on_message(filters.command("wrole", prefix) & filters.me)
 async def set_custom_role(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
@@ -482,9 +482,9 @@ modules_help["wchat"] = {
     "wchat off": "Disable wchat for the current topic.",
     "wchat del": "Delete the chat history for the current topic.",
     "wchat all": "Toggle wchat for all topics in the current group.",
-    "role group <custom role>": "Set a custom role for the bot for the current group.",
-    "role topic <custom role>": "Set a custom role for the bot for the current topic and clear existing chat history.",
-    "role reset": "Reset the custom role for the current group to default.",
+    "wrole group <custom role>": "Set a custom role for the bot for the current group.",
+    "wrole topic <custom role>": "Set a custom role for the bot for the current topic and clear existing chat history.",
+    "wrole reset": "Reset the custom role for the current group to default.",
     "setwkey add <key>": "Add a new Gemini API key.",
     "setwkey set <index>": "Set the current Gemini API key by index.",
     "setwkey del <index>": "Delete a Gemini API key by index.",
