@@ -30,8 +30,7 @@ in_contact_list = filters.create(lambda _, __, message: message.from_user.is_con
 
 is_support = filters.create(lambda _, __, message: message.chat.is_support)
 
-
-message_counts = {}
+USER_WARNINGS = {}
 
 
 @Client.on_message(
@@ -43,15 +42,12 @@ message_counts = {}
     & anti_pm_enabled
 )
 async def anti_pm_handler(client: Client, message: Message):
-    m_n = 0
-    warns = db.get("core.antipm", "warns", m_n)
     user_id = message.from_user.id
     ids = message.chat.id
     b_f = await client.get_me()
     u_n = b_f.first_name
     user = await client.get_users(ids)
     u_f = user.first_name
-    user_info = await client.resolve_peer(ids)
     default_text = db.get("core.antipm", "antipm_msg", None)
     if default_text is None:
         default_text = f"""<b>Hello, {u_f}!
@@ -60,40 +56,43 @@ This is the Assistant Of {u_n}.</b>
 Do not spam further messages else I may have to block you!</i>
 
 <b>This is an automated message by the assistant.</b>
-<b><u>Currently You Have <code>{warns}</code> Warnings.</u></b>
+<b><u>Currently You Have <code>{USER_WARNINGS.get(user_id, 0)}</code> Warnings.</u></b>
     """
     else:
-        default_text = default_text.format(user=u_f, my_name=u_n, warns=warns)
+        default_text = default_text.format(
+            user=u_f, my_name=u_n, warns=USER_WARNINGS.get(user_id, 0)
+        )
+
     if db.get("core.antipm", "spamrep", False):
+        user_info = await client.resolve_peer(ids)
         await client.invoke(functions.messages.ReportSpam(peer=user_info))
+
     if db.get("core.antipm", "block", False):
-        await client.block_user(user_info)
+        await client.block_user(user_id)
 
     if db.get("core.antipm", f"disallowusers{ids}") == user_id != db.get(
         "core.antipm", f"allowusers{ids}"
     ) or db.get("core.antipm", f"disallowusers{ids}") != user_id != db.get(
         "core.antipm", f"allowusers{ids}"
     ):
-        await client.send_message(message.chat.id, f"{default_text}")
-
-        if user_id in message_counts:
-            message_counts[user_id] += 1
-            m_n = db.get("core.antipm", "warns")
-            m_n_n = m_n + 1
-            db.set("core.antipm", "warns", m_n_n)
+        default_pic = db.get("core.antipm", "antipm_pic", None)
+        if default_pic:
+            await client.send_photo(message.chat.id, default_pic, caption=default_text)
         else:
-            message_counts[user_id] = 1
-            m_n_n = 1
-            db.set("core.antipm", "warns", m_n_n)
+            await client.send_message(message.chat.id, default_text)
 
-        if message_counts[user_id] > pm_limit:
+        if user_id in USER_WARNINGS:
+            USER_WARNINGS[user_id] += 1
+        else:
+            USER_WARNINGS[user_id] = 1
+
+        if USER_WARNINGS[user_id] > pm_limit:
             await client.send_message(
                 message.chat.id,
                 "<b>Ehm...! That was your Last warn, Bye Bye see you L0L</b>",
             )
             await client.block_user(user_id)
-            del message_counts[user_id]
-            db.set("core.antipm", "warns", 0)
+            del USER_WARNINGS[user_id]
 
 
 @Client.on_message(filters.command(["antipm", "anti_pm"], prefix) & filters.me)
@@ -170,7 +169,8 @@ async def add_contact(_, message: Message):
     ids = message.chat.id
 
     db.set("core.antipm", f"allowusers{ids}", ids)
-    db.set("core.antipm", "warns", 0)
+    if ids in USER_WARNINGS:
+        del USER_WARNINGS[ids]
     await message.edit("User Approved!")
 
 
@@ -186,9 +186,9 @@ async def del_contact(_, message: Message):
 @Client.on_message(filters.command(["setantipmmsg", "sam"], prefix) & filters.me)
 async def set_antipm_msg(_, message: Message):
     if not message.reply_to_message:
-        return await message.edit(
-            "Reply to a message to set it as your antipm message."
-        )
+        db.set("core.antipm", "antipm_msg", None)
+        await message.edit("antipm message set to default.")
+        return
 
     msg = message.reply_to_message
     afk_msg = msg.text or msg.caption
@@ -223,12 +223,31 @@ async def set_antipm_msg(_, message: Message):
     await message.edit(f"antipm message set to:\n\n{afk_msg}")
 
 
+@Client.on_message(filters.command(["setantipmpic", "sap"], prefix) & filters.me)
+async def set_antipm_pic(_, message: Message):
+    if not message.reply_to_message or not message.reply_to_message.photo:
+        db.set("core.antipm", "antipm_pic", None)
+        await message.edit("antipm picture set to default.")
+        return
+
+    photo = message.reply_to_message.photo
+    file_id = photo.file_id
+
+    old_antipm_pic = db.get("core.antipm", "antipm_pic", None)
+    if old_antipm_pic:
+        db.remove("core.antipm", "antipm_pic")
+    db.set("core.antipm", "antipm_pic", file_id)
+    await message.edit("antipm picture set successfully.")
+
+
 modules_help["antipm"] = {
     "antipm [enable|disable]*": "Enable Pm permit",
     "antipm_report [enable|disable]*": "Enable spam reporting",
     "antipm_block [enable|disable]*": "Enable user blocking",
     "setantipmmsg [reply to message]*": "Set antipm message. Use {user} to mention the user and {my_name} to mention your name and {warns} to mention the warns count.",
     "sam [reply to message]*": "Set antipm message. Use {user} to mention the user and {my_name} to mention your name and {warns} to mention the warns count.",
+    "setantipmpic [reply to photo]*": "Set antipm picture.",
+    "sap [reply to photo]*": "Set antipm picture.",
     "a": "Approve User",
     "d": "DisApprove User",
 }
