@@ -15,7 +15,7 @@ genai = import_library("google.generativeai", "google-generativeai")
 safety_settings = [{"category": cat, "threshold": "BLOCK_NONE"} for cat in [
     "HARM_CATEGORY_DANGEROUS_CONTENT", "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", 
     "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_UNSPECIFIED"]]
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-2.0-flash-exp")
 model.safety_settings = safety_settings
 
 # Default bot role and database collection
