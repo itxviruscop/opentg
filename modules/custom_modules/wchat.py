@@ -21,7 +21,7 @@ safety_settings = [
         "HARM_CATEGORY_UNSPECIFIED",
     ]
 ]
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-2.0-flash-exp")
 model.safety_settings = safety_settings
 
 # Default bot role and database collection
