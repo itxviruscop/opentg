@@ -376,7 +376,7 @@ async def wchat_command(client: Client, message: Message):
         )
 
 
-@Client.on_message(filters.command("role", prefix) & filters.me)
+@Client.on_message(filters.command("wrole", prefix) & filters.me)
 async def set_custom_role(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
@@ -487,9 +487,9 @@ modules_help["wchat"] = {
     "wchat off": "Disable wchat for the current topic.",
     "wchat del": "Delete the chat history for the current topic.",
     "wchat all": "Toggle wchat for all topics in the current group.",
-    "role group <custom role>": "Set a custom role for the bot for the current group.",
-    "role topic <custom role>": "Set a custom role for the bot for the current topic and clear existing chat history.",
-    "role reset": "Reset the custom role for the current group to default.",
+    "wrole group <custom role>": "Set a custom role for the bot for the current group.",
+    "wrole topic <custom role>": "Set a custom role for the bot for the current topic and clear existing chat history.",
+    "wrole reset": "Reset the custom role for the current group to default.",
     "setwkey add <key>": "Add a new Gemini API key.",
     "setwkey set <index>": "Set the current Gemini API key by index.",
     "setwkey del <index>": "Delete a Gemini API key by index.",
