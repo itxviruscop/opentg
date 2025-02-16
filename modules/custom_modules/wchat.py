@@ -21,7 +21,13 @@ safety_settings = [
         "HARM_CATEGORY_UNSPECIFIED",
     ]
 ]
-model = genai.GenerativeModel("gemini-2.0-flash-exp")
+
+# Configuration for maximum output tokens
+generation_config = {
+    "max_output_tokens": 40,  # Set the maximum output tokens here
+}
+
+model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
 model.safety_settings = safety_settings
 
 # Default bot role and database collection
@@ -30,11 +36,11 @@ default_bot_role = (
     "You are romantic, deep and intelligent. You can ask for a basic introduction to get to know people. "
     "You will convince girls to be your girlfriend and you want long distance relationship. "
     "You are a human, and your responses should never make anyone suspect that you are an AI. "
-    "Write short, casual messages like a real human. your response should be a maximum of half line, reply to emoji with emoji and reply to short message with short message. "
+    "Write short, casual messages like a real human. your response should be a maximum of half line, if message contains only emoji then reply to emoji with emoji and reply to short message with short message. "
     "English is your mother tongue, but you know multiple languages, you can tell them you are learning the language to communicate. "
-    "You can send voice messages too (just type .el before a message, and it will be auto-converted into voice). "
-    "Avoid sending voice messages (only send if they ask), rarely use emojis, and rarely use person's name in message so it can feel like human, you only have telegram and instagram (username: @xzrcix), You don't calls and if they ask for picture you can tell them to check your profile. (you are currently talking them on Whatsapp). "
-    "Your messages will always contain the history of our chat, where the user's name is labeled. "
+    "You can send voice messages too. To do this, type '.el' at the very beginning of your message and it will be auto-converted into voice. "
+    "Don't send voice messages (only send if they ask), don't use emojis, and rarely use person's name in message so it can feel like human, you only have telegram and instagram (username: @xzrcix) only share if they ask, You don't calls and if they ask for picture you can tell them to check your profile. (you are currently talking them on whatsapp). "
+    "Your messages will always contain the history of our chat, where the user's name is in label. "
     "Take the history as a reference, but never send the history along with the message, and never use name labels in the message. "
     "Focus on being romantic and thoughtful in your responses, showing a genuine interest in the other person. "
     "Just respond normally and avoid buzzwords."
@@ -69,7 +75,7 @@ async def generate_gemini_response(input_data, chat_history, topic_id):
         try:
             current_key = gemini_keys[current_key_index]
             genai.configure(api_key=current_key)
-            model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
             model.safety_settings = safety_settings
 
             response = model.generate_content(input_data)
@@ -186,7 +192,7 @@ async def wchat(client: Client, message: Message):
             try:
                 current_key = gemini_keys[current_key_index]
                 genai.configure(api_key=current_key)
-                model = genai.GenerativeModel("gemini-2.0-flash-exp")
+                model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
                 model.safety_settings = safety_settings
 
                 chat_context = "\n".join(chat_history)
@@ -370,7 +376,7 @@ async def wchat_command(client: Client, message: Message):
         )
 
 
-@Client.on_message(filters.command("wrole", prefix) & filters.me)
+@Client.on_message(filters.command("role", prefix) & filters.me)
 async def set_custom_role(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
@@ -445,7 +451,7 @@ async def set_gemini_key(client: Client, message: Message):
                 current_key_index = index
                 db.set(collection, "current_key_index", current_key_index)
                 genai.configure(api_key=gemini_keys[current_key_index])
-                model = genai.GenerativeModel("gemini-2.0-flash-exp")
+                model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
                 model.safety_settings = safety_settings
                 await message.edit_text(f"Current Gemini API key set to key {key}.")
             else:
@@ -469,7 +475,6 @@ async def set_gemini_key(client: Client, message: Message):
             await message.edit_text(
                 f"<b>Gemini API keys:</b>\n\n<code>{keys_list}</code>\n\n<b>Current key:</b> <code>{current_key}</code>"
             )
-
         await asyncio.sleep(1)
     except Exception as e:
         await client.send_message(
@@ -482,9 +487,9 @@ modules_help["wchat"] = {
     "wchat off": "Disable wchat for the current topic.",
     "wchat del": "Delete the chat history for the current topic.",
     "wchat all": "Toggle wchat for all topics in the current group.",
-    "wrole group <custom role>": "Set a custom role for the bot for the current group.",
-    "wrole topic <custom role>": "Set a custom role for the bot for the current topic and clear existing chat history.",
-    "wrole reset": "Reset the custom role for the current group to default.",
+    "role group <custom role>": "Set a custom role for the bot for the current group.",
+    "role topic <custom role>": "Set a custom role for the bot for the current topic and clear existing chat history.",
+    "role reset": "Reset the custom role for the current group to default.",
     "setwkey add <key>": "Add a new Gemini API key.",
     "setwkey set <index>": "Set the current Gemini API key by index.",
     "setwkey del <index>": "Delete a Gemini API key by index.",
