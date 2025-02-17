@@ -263,7 +263,7 @@ async def gchat_command(client: Client, message: Message):
             if user_id not in enabled_users:
                 enabled_users.append(user_id)
                 db.set(collection, "enabled_users", enabled_users)
-            await message.edit_text(f"<b>gchat is enabled for user {user_id}.</b>")
+            await message.edit_text(f"<b>ON</b> [{user_id}].")
         elif command == "off":
             if user_id not in disabled_users:
                 disabled_users.append(user_id)
@@ -271,7 +271,7 @@ async def gchat_command(client: Client, message: Message):
             if user_id in enabled_users:
                 enabled_users.remove(user_id)
                 db.set(collection, "enabled_users", enabled_users)
-            await message.edit_text(f"<b>gchat is disabled for user {user_id}.</b>")
+            await message.edit_text(f"<b>OFF</b> [{user_id}].")
         elif command == "del":
             db.set(collection, f"chat_history.{user_id}", None)
             await message.edit_text(f"<b>Chat history deleted for user {user_id}.</b>")
