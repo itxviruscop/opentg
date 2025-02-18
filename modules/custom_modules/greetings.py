@@ -46,20 +46,24 @@ def parse_days_and_time(args: list) -> tuple[int, datetime]:
 
 
 async def schedule_greetings(
-    client: Client, chat_id: int, messages: list, start_time: datetime, days: int
+    client: Client, chat_id: int, messages: list, start_time: datetime, days: int, thread_id: int = None
 ):
-    """Schedules greetings messages in the chat."""
+    """Schedules greetings messages in the chat or a specific topic."""
     for day in range(days):
         schedule_date = start_time + timedelta(days=day)
         message_text = messages[day % len(messages)]
         try:
             await client.send_message(
-                chat_id=chat_id, text=message_text, schedule_date=schedule_date
+                chat_id=chat_id,
+                text=message_text,
+                schedule_date=schedule_date,
+                message_thread_id=thread_id  # Support for group topics
             )
         except ChatForwardsRestricted:
             await client.send_message(
                 chat_id,
                 "<code>Scheduling failed: Restricted copy/forwards in this chat.</code>",
+                message_thread_id=thread_id,  # Ensure the error is sent in the correct topic
             )
             return
 
@@ -84,7 +88,12 @@ async def handle_schedule_command(client: Client, message: Message, greeting_typ
             start_time_utc += timedelta(days=1)
 
         await schedule_greetings(
-            client, message.chat.id, GREETINGS[greeting_type], start_time_utc, days
+            client, 
+            message.chat.id, 
+            GREETINGS[greeting_type], 
+            start_time_utc, 
+            days, 
+            thread_id=message.message_thread_id  # Pass thread ID for topics
         )
 
         formatted_time = scheduled_time.strftime("%I:%M %p")
@@ -125,8 +134,12 @@ async def schedule_greet(client: Client, message: Message):
         if night_time_utc < datetime.utcnow():
             night_time_utc += timedelta(days=1)
 
-        await schedule_greetings(client, message.chat.id, GREETINGS["morning"], morning_time_utc, days)
-        await schedule_greetings(client, message.chat.id, GREETINGS["night"], night_time_utc, days)
+        await schedule_greetings(
+            client, message.chat.id, GREETINGS["morning"], morning_time_utc, days, thread_id=message.message_thread_id
+        )
+        await schedule_greetings(
+            client, message.chat.id, GREETINGS["night"], night_time_utc, days, thread_id=message.message_thread_id
+        )
 
         await send_status_and_delete(
             message,
@@ -155,4 +168,4 @@ modules_help["greetings"] = {
     "night <days> <HH:MM AM/PM>": "Schedules night greetings for the specified days at the given time.",
     "greet <days>": "Schedules both morning and night greetings for the specified days at fixed times.",
     "\n<b>Default time zone offset:</b>": f"UTC+{DEFAULT_TIME_ZONE_OFFSET}",
-    }
+}
