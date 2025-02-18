@@ -57,13 +57,13 @@ async def schedule_greetings(
                 chat_id=chat_id,
                 text=message_text,
                 schedule_date=schedule_date,
-                message_thread_id=thread_id  # Support for group topics
+                message_thread_id=thread_id
             )
         except ChatForwardsRestricted:
             await client.send_message(
                 chat_id,
                 "<code>Scheduling failed: Restricted copy/forwards in this chat.</code>",
-                message_thread_id=thread_id,  # Ensure the error is sent in the correct topic
+                message_thread_id=thread_id,
             )
             return
 
@@ -93,7 +93,7 @@ async def handle_schedule_command(client: Client, message: Message, greeting_typ
             GREETINGS[greeting_type], 
             start_time_utc, 
             days, 
-            thread_id=message.message_thread_id  # Pass thread ID for topics
+            thread_id=message.message_thread_id
         )
 
         formatted_time = scheduled_time.strftime("%I:%M %p")
