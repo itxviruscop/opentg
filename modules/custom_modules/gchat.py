@@ -277,7 +277,6 @@ async def gchat_command(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
 
-        # Ensure at least one argument is provided
         if len(parts) < 2:
             await message.edit_text("<b>Usage:</b> gchat `on`, `off`, `del`, or `all` [user_id].")
             return
@@ -326,8 +325,17 @@ async def gchat_command(client: Client, message: Message):
 async def set_custom_role(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
-        custom_role = " ".join(parts[2:]).strip()
-        user_id = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else message.chat.id
+
+        if len(parts) < 2:
+            await message.edit_text("<b>Usage:</b> role [user_id] <custom role>")
+            return
+
+        if len(parts) > 2 and parts[1].isdigit():
+            user_id = int(parts[1])
+            custom_role = " ".join(parts[2:]).strip()
+        else:
+            user_id = message.chat.id
+            custom_role = " ".join(parts[1:]).strip()
 
         if not custom_role:
             db.set(collection, f"custom_roles.{user_id}", default_bot_role)
