@@ -276,6 +276,12 @@ async def handle_files(client: Client, message: Message):
 async def gchat_command(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
+
+        # Ensure at least one argument is provided
+        if len(parts) < 2:
+            await message.edit_text("<b>Usage:</b> gchat `on`, `off`, `del`, or `all` [user_id].")
+            return
+
         command = parts[1].lower()
         user_id = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else message.chat.id
 
@@ -287,6 +293,7 @@ async def gchat_command(client: Client, message: Message):
                 enabled_users.append(user_id)
                 db.set(collection, "enabled_users", enabled_users)
             await message.edit_text(f"<b>ON</b> [{user_id}].")
+
         elif command == "off":
             if user_id not in disabled_users:
                 disabled_users.append(user_id)
@@ -295,18 +302,23 @@ async def gchat_command(client: Client, message: Message):
                 enabled_users.remove(user_id)
                 db.set(collection, "enabled_users", enabled_users)
             await message.edit_text(f"<b>OFF</b> [{user_id}].")
+
         elif command == "del":
             db.set(collection, f"chat_history.{user_id}", None)
             await message.edit_text(f"<b>Chat history deleted for user {user_id}.</b>")
+
         elif command == "all":
             global gchat_for_all
             gchat_for_all = not gchat_for_all
             db.set(collection, "gchat_for_all", gchat_for_all)
             await message.edit_text(f"gchat is now {'enabled' if gchat_for_all else 'disabled'} for all users.")
+
         else:
-            await message.edit_text(f"<b>Usage:</b> {prefix}gchat `on`, `off`, `del`, or `all` [user_id].")
+            await message.edit_text("<b>Invalid command.</b> Use `gchat on`, `off`, `del`, or `all`.")
+
         await asyncio.sleep(1)
         await message.delete()
+        
     except Exception as e:
         await client.send_message("me", f"An error occurred in the `gchat` command:\n\n{str(e)}")
 
