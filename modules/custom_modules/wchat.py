@@ -342,8 +342,13 @@ async def handle_files(client: Client, message: Message):
 async def wchat_command(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
+
+        if len(parts) < 2:
+            await message.edit_text(f"<b>Usage:</b> {prefix}wchat `on`, `off`, `del`, or `all`.")
+            return
+
         command = parts[1].lower()
-        group_id = str(message.chat.id)  # Convert group_id to string
+        group_id = str(message.chat.id)
         topic_id = f"{group_id}:{message.message_thread_id}"
 
         if command == "on":
@@ -354,6 +359,7 @@ async def wchat_command(client: Client, message: Message):
                 enabled_topics.append(topic_id)
                 db.set(collection, "enabled_topics", enabled_topics)
             await message.edit_text(f"<b>wchat is enabled for topic {topic_id}.</b>")
+
         elif command == "off":
             if topic_id not in disabled_topics:
                 disabled_topics.append(topic_id)
@@ -362,29 +368,26 @@ async def wchat_command(client: Client, message: Message):
                 enabled_topics.remove(topic_id)
                 db.set(collection, "enabled_topics", enabled_topics)
             await message.edit_text(f"<b>wchat is disabled for topic {topic_id}.</b>")
+
         elif command == "del":
             db.set(collection, f"chat_history.{topic_id}", None)
-            await message.edit_text(
-                f"<b>Chat history deleted for topic {topic_id}.</b>"
-            )
+            await message.edit_text(f"<b>Chat history deleted for topic {topic_id}.</b>")
+
         elif command == "all":
-            wchat_for_all_groups[group_id] = not wchat_for_all_groups.get(
-                group_id, False
-            )
+            wchat_for_all_groups[group_id] = not wchat_for_all_groups.get(group_id, False)
             db.set(collection, "wchat_for_all_groups", wchat_for_all_groups)
             await message.edit_text(
                 f"wchat is now {'enabled' if wchat_for_all_groups[group_id] else 'disabled'} for all topics in this group."
             )
+
         else:
-            await message.edit_text(
-                f"<b>Usage:</b> {prefix}wchat `on`, `off`, `del`, or `all`."
-            )
+            await message.edit_text(f"<b>Invalid command.</b> Use `wchat on`, `off`, `del`, or `all`.")
+
         await asyncio.sleep(1)
         await message.delete()
+
     except Exception as e:
-        await client.send_message(
-            "me", f"An error occurred in the `wchat` command:\n\n{str(e)}"
-        )
+        await client.send_message("me", f"An error occurred in the `wchat` command:\n\n{str(e)}")
 
 
 @Client.on_message(filters.command("wrole", prefix) & filters.me)
