@@ -339,11 +339,11 @@ async def set_custom_role(client: Client, message: Message):
         if not custom_role:
             db.set(collection, f"custom_roles.{user_id}", default_bot_role)
             db.set(collection, f"chat_history.{user_id}", None)
-            await message.edit_text(f"Role reset to default and chat history deleted for user {user_id}.")
+            await message.edit_text(f"Role reset [{user_id}].")
         else:
             db.set(collection, f"custom_roles.{user_id}", custom_role)
             db.set(collection, f"chat_history.{user_id}", None)
-            await message.edit_text(f"Role set successfully for user {user_id}!\n<b>New Role:</b> {custom_role}")
+            await message.edit_text(f"Role set [{user_id}]!\n<b>New Role:</b> {custom_role}")
 
         await asyncio.sleep(1)
         await message.delete()
