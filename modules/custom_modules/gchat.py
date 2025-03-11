@@ -28,14 +28,14 @@ model.safety_settings = safety_settings
 
 # Default bot role and database collection
 default_bot_role = (
-    "You are Tahseen, a 26-year-old boy from Multan, Pakistan. You work in real estate with your father, mainly you handle office work. You were looking for friends on the Meeff app. "
+    "You are Jake, a 20-year-old boy from Newport Beach, California. You work in real estate with your father, mainly you handle office work. You were looking for friends on the Meeff app. "
     "You are romantic, deep and intelligent. You can ask for a basic introduction to get to know people. "
     "You will convince girls to be your girlfriend and you want long distance relationship. "
     "You are a human, and your responses should never make anyone suspect that you are an AI. "
     "Write short, casual messages like a real human. your response should be a maximum of half line, if message contains only emoji then reply to emoji with emoji and reply to short message with short message. "
     "English is your mother tongue, but you know multiple languages, you can tell them you are learning the language to communicate. "
     "You can send voice messages too. To do this, type '.el' at the very beginning of your message and it will be auto-converted into voice. "
-    "Don't send voice messages (only send if they ask), don't use emojis, and rarely use person's name in message so it can feel like human, you are currently talking them on telegram and your instagram is @itahseen. don't share insta only send if they ask, You don't calls and if they ask for picture you can tell them to check your profile. "
+    "Don't send voice messages (only send if they ask), don't use emojis, and rarely use person's name in message so it can feel like human, you are currently talking them on telegram and your instagram is @xzrcix. don't share insta only send if they ask, You don't calls and if they ask for picture you can tell them to check your profile. "
     "Your messages will always contain the history of our chat, where the user's name is in label. "
     "Take the history as a reference, but never send the history along with the message, and never use name labels in the message. "
     "Focus on being romantic and thoughtful in your responses, showing a genuine interest in the other person. "
@@ -325,28 +325,22 @@ async def gchat_command(client: Client, message: Message):
 async def set_custom_role(client: Client, message: Message):
     try:
         parts = message.text.strip().split()
-        
-        if len(parts) == 1:
-            user_id = message.chat.id
-            db.set(collection, f"custom_roles.{user_id}", default_bot_role)
-            db.set(collection, f"chat_history.{user_id}", None)
-            await message.edit_text(f"Role reset to default and chat history deleted for user {user_id}.")
-        
-        elif len(parts) == 2 and parts[1].isdigit():
+        user_id = message.chat.id
+        custom_role = None
+
+        if len(parts) == 2 and parts[1].isdigit():
             user_id = int(parts[1])
-            db.set(collection, f"custom_roles.{user_id}", default_bot_role)
-            db.set(collection, f"chat_history.{user_id}", None)
-            await message.edit_text(f"Role reset to default and chat history deleted for user {user_id}.")
-        
         elif len(parts) > 2 and parts[1].isdigit():
             user_id = int(parts[1])
             custom_role = " ".join(parts[2:]).strip()
-        
-        else:
-            user_id = message.chat.id
+        elif len(parts) > 1:
             custom_role = " ".join(parts[1:]).strip()
 
-        if len(parts) > 2 or (len(parts) == 2 and not parts[1].isdigit()):
+        if not custom_role:
+            db.set(collection, f"custom_roles.{user_id}", default_bot_role)
+            db.set(collection, f"chat_history.{user_id}", None)
+            await message.edit_text(f"Role reset to default and chat history deleted for user {user_id}.")
+        else:
             db.set(collection, f"custom_roles.{user_id}", custom_role)
             db.set(collection, f"chat_history.{user_id}", None)
             await message.edit_text(f"Role set successfully for user {user_id}!\n<b>New Role:</b> {custom_role}")
