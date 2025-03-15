@@ -54,9 +54,9 @@ smileys = ["-.-", "):", ":)", "*.*", ")*"]
 # Set timezone to Los Angeles
 la_timezone = pytz.timezone("America/Los_Angeles")
 
-def get_chat_history(user_id, bot_role, user_message, user_name):
-    chat_history = db.get(collection, f"chat_history.{user_id}") or [f"Role: {bot_role}"]
-    chat_history.append(f"{user_name}: {user_message}")  # Removed timestamp
+def get_chat_history(user_id, user_message, user_name):
+    chat_history = db.get(collection, f"chat_history.{user_id}") or []
+    chat_history.append(f"{user_name}: {user_message}")
     db.set(collection, f"chat_history.{user_id}", chat_history)
     return chat_history
 
@@ -157,7 +157,7 @@ async def gchat(client: Client, message: Message):
             return
 
         bot_role = db.get(collection, f"custom_roles.{user_id}") or default_bot_role
-        chat_history = get_chat_history(user_id, bot_role, user_message, user_name)
+        chat_history = get_chat_history(user_id, user_message, user_name)
 
         await asyncio.sleep(random.choice([4, 8, 10]))
         await send_typing_action(client, message.chat.id, user_message)
@@ -206,7 +206,7 @@ async def handle_files(client: Client, message: Message):
 
         bot_role = db.get(collection, f"custom_roles.{user_id}") or default_bot_role
         caption = message.caption.strip() if message.caption else ""
-        chat_history = get_chat_history(user_id, bot_role, caption, user_name)
+        chat_history = get_chat_history(user_id, caption, user_name)
         chat_context = "\n".join(chat_history)
 
         if message.photo:
@@ -304,13 +304,13 @@ async def gchat_command(client: Client, message: Message):
 
         elif command == "del":
             db.set(collection, f"chat_history.{user_id}", None)
-            await message.edit_text(f"<b>Chat history deleted for user {user_id}.</b>")
+            await message.edit_text(f"<b>Deleted</b> [{user_id}].")
 
         elif command == "all":
             global gchat_for_all
             gchat_for_all = not gchat_for_all
             db.set(collection, "gchat_for_all", gchat_for_all)
-            await message.edit_text(f"gchat is now {'enabled' if gchat_for_all else 'disabled'} for all users.")
+            await message.edit_text(f"{'enabled' if gchat_for_all else 'disabled'} for all.")
 
         else:
             await message.edit_text("<b>Invalid command.</b> Use `gchat on`, `off`, `del`, or `all`.")
