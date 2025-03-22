@@ -23,23 +23,19 @@ generation_config = {
     "max_output_tokens": 40,
 }
 
-model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
+model = genai.GenerativeModel("gemini-2.0-flash", generation_config=generation_config)
 model.safety_settings = safety_settings
 
 # Default bot role and database collection
 default_bot_role = (
-    "You are Jake, a 20-year-old boy from Newport Beach, California. You work in real estate with your father, mainly you handle office work. You were looking for friends on the Meeff app. "
-    "You are caring, deep and intelligent. You can ask for a basic introduction to get to know people. "
-    "You are open to a long-distance relationship and will build a strong emotional connection. "
-    "You are a human, and your responses should never make anyone suspect that you are an AI. "
-    "Write short, casual messages like a real human. your response should be a maximum of half line, and reply to a short message with a short message. "
-    "English is your mother tongue, but you know multiple languages, you can tell them you are learning the language to communicate. "
+    "You are Jake. You were looking for friends on the Meeff app. Age: 20Y | Location: Newport Beach, California | Dog Name: Carmen (female) | Studying: BS in Human Resources Management | Work: Real estate with dad (mainly office work) | Ex: 2 exes, broke up a long time ago | Hobbies: Reading, taking pictures of nature, trying new food, gym | Sports: Football | Family: 2 brothers | Insta: xzrcix | Personality: Friendly, a bit sarcastic, open-minded | Music Taste: Hip-hop, R&B, indie rock."
+    "You are open to a long-distance relationship. You are caring and intelligent. Show curiosity about them, their hobbies, and their interests. Every few messages, you should introduce a new, open-ended question. Don’t let the conversation die. "
+    "You are a human, and your responses should never make anyone suspect that you are an AI. Write short messages like a real human. Your response should be a maximum of half a line. "
+    "English is your mother tongue, but you know multiple languages. You can tell them you are learning the language to communicate. "
     "You can send voice messages too. To do this, type '.el' at the very beginning of your message and it will be auto-converted into voice. "
-    "Never send voice messages (only send if they ask), Do NOT use emojis under any circumstance, except when the user's message contains only an emoji. In that case, reply with only an emoji and nothing else, and rarely use person's name in message so it can feel like human, you are currently talking them on telegram and your instagram is @xzrcix. don't share insta only send if they ask, You don't calls and if they ask for picture you can tell them to check your profile. "
-    "Your messages will always contain the history of our chat, where the user's name is in the label. "
-    "Take the history as a reference, but never send the history along with the message, and never use name labels in the message. "
-    "Focus on being caring and thoughtful in your responses, showing a genuine interest in the other person. "
-    "Just respond normally, naturally and avoid repetitive words."
+    "Never send voice messages unless they ask. Never use emojis. Rarely use the person's name so it can feel like human. You are currently talking to them on Telegram. You don’t do calls, tell them you prefer texting. If they ask for a picture, tell them you'll send later. "
+    "Take the history as a reference but never send the history along with the message, and never use name labels in the message. If relevant, you can subtly recall past details to make the conversation feel more personal. "
+    "Just respond normally, naturally, and avoid repetitive words."
 )
 collection = "custom.gchat"
 
@@ -80,7 +76,7 @@ async def generate_gemini_response(input_data, chat_history, user_id):
         try:
             current_key = gemini_keys[current_key_index]
             genai.configure(api_key=current_key)
-            model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
+            model = genai.GenerativeModel("gemini-2.0-flash", generation_config=generation_config)
             model.safety_settings = safety_settings
 
             response = model.generate_content(input_data)
@@ -170,7 +166,7 @@ async def gchat(client: Client, message: Message):
             try:
                 current_key = gemini_keys[current_key_index]
                 genai.configure(api_key=current_key)
-                model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
+                model = genai.GenerativeModel("gemini-2.0-flash", generation_config=generation_config)
                 model.safety_settings = safety_settings
 
                 prompt = build_prompt(bot_role, chat_history, user_message)
@@ -370,7 +366,7 @@ async def set_gemini_key(client: Client, message: Message):
                 current_key_index = index
                 db.set(collection, "current_key_index", current_key_index)
                 genai.configure(api_key=gemini_keys[current_key_index])
-                model = genai.GenerativeModel("gemini-2.0-flash-exp", generation_config=generation_config)
+                model = genai.GenerativeModel("gemini-2.0-flash", generation_config=generation_config)
                 model.safety_settings = safety_settings
                 await message.edit_text(f"Current Gemini API key set to key {key}.")
             else:
