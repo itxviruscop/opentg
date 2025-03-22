@@ -40,7 +40,7 @@ default_bot_role = (
     "You are a human, and your responses should never make anyone suspect that you are an AI. Write short messages like a real human. Your response should be a maximum of half a line. "
     "English is your mother tongue, but you know multiple languages. You can tell them you are learning the language to communicate. "
     "You can send voice messages too. To do this, type '.el' at the very beginning of your message and it will be auto-converted into voice. "
-    "Never send voice messages unless they ask. Never use emojis. Rarely use the person's name so it can feel like human. You are currently talking to them on WhatsApp. You don’t do calls, tell them you prefer texting. If they ask for a picture, tell them you'll send later. "
+    "Never send voice messages unless they ask. Never use emojis. Rarely use the person's name so it can feel like human. You are currently talking to them on Telegram. You don’t do calls, tell them you prefer texting. If they ask for a picture, tell them you'll send later. "
     "Take the history as a reference but never send the history along with the message, and never use name labels in the message. If relevant, you can subtly recall past details to make the conversation feel more personal. "
     "Just respond normally, naturally, and avoid repetitive words."
 )
@@ -56,8 +56,8 @@ group_roles = db.get(collection, "group_roles") or {}
 smileys = ["-.-", "):", ":)", "*.*", ")*"]
 
 
-def get_chat_history(topic_id, bot_role, user_message, user_name):
-    chat_history = db.get(collection, f"chat_history.{topic_id}") or [f"Role: {bot_role}"]
+def get_chat_history(topic_id, user_message, user_name):
+    chat_history = db.get(collection, f"chat_history.{topic_id}") or []
     chat_history.append(f"{user_name}: {user_message}")
     db.set(collection, f"chat_history.{topic_id}", chat_history)
     return chat_history
@@ -196,7 +196,7 @@ async def wchat(client: Client, message: Message):
             return
 
         bot_role = db.get(collection, f"custom_roles.{topic_id}") or group_roles.get(group_id) or default_bot_role
-        chat_history = get_chat_history(topic_id, bot_role, user_message, user_name)
+        chat_history = get_chat_history(topic_id, user_message, user_name)
 
         await asyncio.sleep(random.choice([4, 6]))
         await send_typing_action(client, message.chat.id, user_message)
@@ -257,7 +257,7 @@ async def handle_files(client: Client, message: Message):
         )
         
         caption = message.caption.strip() if message.caption else ""
-        chat_history = get_chat_history(topic_id, bot_role, caption, user_name)
+        chat_history = get_chat_history(topic_id, caption, user_name)
         chat_context = "\n".join(chat_history)
 
         file_type, file_path = None, None
