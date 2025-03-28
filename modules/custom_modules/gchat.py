@@ -344,7 +344,7 @@ async def switch_role(client: Client, message: Message):
 
         if len(parts) == 1:
             available_roles = "\n".join([f"- {role}" for role in roles.keys()])
-            await message.edit_text(f"<b>Available roles:</b>\n{available_roles}")
+            await message.edit_text(f"<b>Available roles:</b>\n\n{available_roles}")
             return
 
         role_name = parts[1].lower()
@@ -440,13 +440,14 @@ async def set_gemini_key(client: Client, message: Message):
         await client.send_message("me", f"An error occurred in the `setgkey` command:\n\n{str(e)}")
 
 modules_help["gchat"] = {
-    "gchat on [user_id]": "Enable gchat for the specified user or current user in the chat.",
-    "gchat off [user_id]": "Disable gchat for the specified user or current user in the chat.",
-    "gchat del [user_id]": "Delete the chat history for the specified user or current user.",
-    "gchat all": "Toggle gchat for all users globally.",
-    "role [user_id] <custom role>": "Set a custom role for the bot for the specified user or current user and clear existing chat history.",
-    "setgkey add <key>": "Add a new Gemini API key.",
-    "setgkey set <index>": "Set the current Gemini API key by index.",
-    "setgkey del <index>": "Delete a Gemini API key by index.",
-    "setgkey": "Display all available Gemini API keys and the current key."
+    "gchat on [user_id]": "Enable gchat for the user.",
+    "gchat off [user_id]": "Disable gchat for the user.",
+    "gchat del [user_id]": "Delete chat history for the user.",
+    "gchat all": "Toggle gchat for all users.",
+    "role [user_id] <custom role>": "Set a custom role for the user.",
+    "switch": "Switch gchat modes.",
+    "setgkey add <key>": "Add a Gemini API key.",
+    "setgkey set <index>": "Set the Gemini API key.",
+    "setgkey del <index>": "Delete a Gemini API key.",
+    "setgkey": "Show all Gemini API keys."
 }
