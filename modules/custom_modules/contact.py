@@ -35,8 +35,9 @@ async def add_contact(c: Client, message: Message):
     except Exception as e:
         await message.edit(f"Failed to add contact: <code>{e}</code>")
 
-    await asyncio.sleep(5)
+    await asyncio.sleep(1)
     await message.delete()
+
 
 @Client.on_message(filters.command(["remove", "r"], prefix) & filters.me)
 async def remove_contact(c: Client, message: Message):
@@ -52,7 +53,8 @@ async def remove_contact(c: Client, message: Message):
 
     await asyncio.sleep(5)
     await message.delete()
-    
+
+
 @Client.on_message(filters.command("mutual", prefix) & filters.me)
 async def check_mutual(c: Client, message: Message):
     try:
@@ -72,9 +74,35 @@ async def check_mutual(c: Client, message: Message):
     await asyncio.sleep(5)
     await message.delete()
 
+@Client.on_message(filters.command(["clearchat", "cc"], prefix) & filters.me)
+async def clear_chat(c: Client, message: Message):
+    try:
+        chat_id = message.chat.id
+        message_ids = []
+
+        me = await c.get_me()
+
+        async for msg in c.get_chat_history(chat_id):
+            if msg.from_user and msg.from_user.id == me.id:
+                message_ids.append(msg.id)
+
+            if len(message_ids) >= 100:
+                await c.delete_messages(chat_id, message_ids, revoke=True)
+                message_ids.clear()
+
+        if message_ids:
+            await c.delete_messages(chat_id, message_ids, revoke=True)
+
+        await message.edit("Your messages have been deleted from both sides.")
+    except Exception as e:
+        await message.edit(f"Failed to clear chat: <code>{e}</code>")
+    await asyncio.sleep(5)
+    await message.delete()
+
 
 modules_help["contact"] = {
     "add [optional name]": "Add the current user to your contacts. You can also reply to a message to use it as the name. Displays (Mutual) or (Not Mutual).",
     "mutual": "Check if you're mutual contacts with the replied user or private chat user.",
     "remove": "Remove the current user or replied user from your contacts.",
+    "delchat": "Delete the current chat/dialog from your account (leave and delete).",
 }
