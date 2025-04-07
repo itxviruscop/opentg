@@ -104,5 +104,5 @@ modules_help["contact"] = {
     "add [optional name]": "Add the current user to your contacts. You can also reply to a message to use it as the name. Displays (Mutual) or (Not Mutual).",
     "mutual": "Check if you're mutual contacts with the replied user or private chat user.",
     "remove": "Remove the current user or replied user from your contacts.",
-    "delchat": "Delete the current chat/dialog from your account (leave and delete).",
+    "clearchat": "Delete own messages in chat.",
 }
