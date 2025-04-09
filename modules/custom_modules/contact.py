@@ -71,28 +71,71 @@ async def check_mutual(c: Client, message: Message):
     await asyncio.sleep(5)
     await message.delete()
 
-@Client.on_message(filters.command(["clearchat", "cc"], prefix) & filters.me)
-async def clear_chat(c: Client, message: Message):
-    try:
-        async for msg in c.get_chat_history(message.chat.id):
-            if msg.from_user and msg.from_user.id == (await c.get_me()).id:
+@Client.on_message(filters.command(["clearmedia", "cm"], prefix) & filters.me)
+async def clearmedia(client: Client, message: Message):
+    chat_id = message.chat.id
+    args = message.text.split(maxsplit=1)
+    delete_all = len(args) > 1 and args[1].lower() == "all"
+    deleted_count = 0
+
+    async for msg in client.get_chat_history(chat_id):
+        if delete_all:
+            if msg.media:
                 try:
-                    await c.delete_messages(message.chat.id, msg.id)
+                    await client.delete_messages(chat_id, msg.id)
+                    deleted_count += 1
+                    await asyncio.sleep(0.05)
+                except:
+                    pass
+        elif msg.from_user and msg.from_user.id == client.me.id:
+            if msg.media:
+                try:
+                    await client.delete_messages(chat_id, msg.id)
+                    deleted_count += 1
+                    await asyncio.sleep(0.05)
                 except:
                     pass
 
-        await c.send_message("me", "Your messages have been deleted from both sides.")
-    except Exception as e:
-        await c.send_message("me", f"Error while clearing chat: <code>{e}</code>")
+    await message.edit(f"Deleted {deleted_count} media message(s).")
+    await asyncio.sleep(2)
+    await message.delete()
 
-    try:
-        await message.delete()
-    except:
-        pass
+
+@Client.on_message(filters.command(["clearall", "ca"], prefix) & filters.me)
+async def clearall(client: Client, message: Message):
+    chat_id = message.chat.id
+    args = message.text.split(maxsplit=1)
+    delete_all = len(args) > 1 and args[1].lower() == "all"
+    deleted_count = 0
+
+    async for msg in client.get_chat_history(chat_id):
+        if delete_all:
+            try:
+                await client.delete_messages(chat_id, msg.id)
+                deleted_count += 1
+                await asyncio.sleep(0.05)
+            except:
+                pass
+        else:
+            if msg.from_user and msg.from_user.id == client.me.id:
+                try:
+                    await client.delete_messages(chat_id, msg.id)
+                    deleted_count += 1
+                    await asyncio.sleep(0.05)
+                except:
+                    pass
+
+    await message.edit(f"Deleted {deleted_count} message(s).")
+    await asyncio.sleep(2)
+    await message.delete()
+
 
 modules_help["contact"] = {
     "add [optional name]": "Add the current user to your contacts. You can also reply to a message to use it as the name. Displays (Mutual) or (Not Mutual).",
     "mutual": "Check if you're mutual contacts with the replied user or private chat user.",
     "remove": "Remove the current user or replied user from your contacts.",
-    "clearchat": "Delete own messages in chat.",
+    "clearmedia / cm": "Delete **your own** media messages (photos, videos, documents, stickers) in the current chat.\n"
+                       "`clearmedia all` or `cm all` - Delete media messages from **both you and the other person** in this chat.",
+    "clearall / ca": "Delete **your own** messages (media + text) in the current chat.\n"
+                     "`clearall all` or `ca all` - Delete **all messages** (yours and the other person's) in this chat."
 }
