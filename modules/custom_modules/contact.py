@@ -3,7 +3,6 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 from utils.misc import modules_help, prefix
 
-
 @Client.on_message(filters.command(["add", "c"], prefix) & filters.me)
 async def add_contact(c: Client, message: Message):
     try:
@@ -38,7 +37,6 @@ async def add_contact(c: Client, message: Message):
     await asyncio.sleep(1)
     await message.delete()
 
-
 @Client.on_message(filters.command(["remove", "r"], prefix) & filters.me)
 async def remove_contact(c: Client, message: Message):
     try:
@@ -53,7 +51,6 @@ async def remove_contact(c: Client, message: Message):
 
     await asyncio.sleep(5)
     await message.delete()
-
 
 @Client.on_message(filters.command("mutual", prefix) & filters.me)
 async def check_mutual(c: Client, message: Message):
@@ -77,28 +74,21 @@ async def check_mutual(c: Client, message: Message):
 @Client.on_message(filters.command(["clearchat", "cc"], prefix) & filters.me)
 async def clear_chat(c: Client, message: Message):
     try:
-        chat_id = message.chat.id
-        message_ids = []
+        async for msg in c.get_chat_history(message.chat.id):
+            if msg.from_user and msg.from_user.id == (await c.get_me()).id:
+                try:
+                    await c.delete_messages(message.chat.id, msg.id)
+                except:
+                    pass
 
-        me = await c.get_me()
-
-        async for msg in c.get_chat_history(chat_id):
-            if msg.from_user and msg.from_user.id == me.id:
-                message_ids.append(msg.id)
-
-            if len(message_ids) >= 100:
-                await c.delete_messages(chat_id, message_ids, revoke=True)
-                message_ids.clear()
-
-        if message_ids:
-            await c.delete_messages(chat_id, message_ids, revoke=True)
-
-        await message.edit("Your messages have been deleted from both sides.")
+        await c.send_message("me", "Your messages have been deleted from both sides.")
     except Exception as e:
-        await message.edit(f"Failed to clear chat: <code>{e}</code>")
-    await asyncio.sleep(5)
-    await message.delete()
+        await c.send_message("me", f"Error while clearing chat: <code>{e}</code>")
 
+    try:
+        await message.delete()
+    except:
+        pass
 
 modules_help["contact"] = {
     "add [optional name]": "Add the current user to your contacts. You can also reply to a message to use it as the name. Displays (Mutual) or (Not Mutual).",
