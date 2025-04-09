@@ -129,13 +129,10 @@ async def clearall(client: Client, message: Message):
     await asyncio.sleep(2)
     await message.delete()
 
-
 modules_help["contact"] = {
-    "add [optional name]": "Add the current user to your contacts. You can also reply to a message to use it as the name. Displays (Mutual) or (Not Mutual).",
-    "mutual": "Check if you're mutual contacts with the replied user or private chat user.",
-    "remove": "Remove the current user or replied user from your contacts.",
-    "clearmedia / cm": "Delete **your own** media messages (photos, videos, documents, stickers) in the current chat.\n"
-                       "`clearmedia all` or `cm all` - Delete media messages from **both you and the other person** in this chat.",
-    "clearall / ca": "Delete **your own** messages (media + text) in the current chat.\n"
-                     "`clearall all` or `ca all` - Delete **all messages** (yours and the other person's) in this chat."
+    "add [name]": "Add user to contacts. Optional name via reply. Shows (Mutual) or (Not Mutual).",
+    "mutual": "Check if user is a mutual contact.",
+    "remove": "Remove user from contacts.",
+    "clearmedia / cm": "Delete your media in this chat.\n`all` - delete both sides' media.",
+    "clearall / ca": "Delete your messages (media + text).\n`all` - delete all messages from both sides."
 }
