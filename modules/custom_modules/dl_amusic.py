@@ -1,4 +1,3 @@
-
 import json
 import requests
 import time
@@ -18,9 +17,14 @@ async def apple_music(client: Client, message: Message):
     elif message.reply_to_message:
         query = message.reply_to_message.text
     else:
-        await message.edit(
-            f"<b>Usage:</b> <code>{prefix}amusic [song name]</code>"
-        )
+        if is_self:
+            await message.edit(
+                f"<b>Usage:</b> <code>{prefix}amusic [song name]</code>"
+            )
+        else:
+            await message.reply(
+                f"<b>Usage:</b> <code>{prefix}amusic [song name]</code>"
+            )
         return
     
     if is_self:
