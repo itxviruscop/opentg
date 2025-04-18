@@ -22,11 +22,16 @@ async def apple_music(client: Client, message: Message):
     
     ms = await message.edit_text(f"<code>Searching for {query} on Apple Music...</code>")
     
-    search_url = f"https://delirius-apiofc.vercel.app/search/applemusicv2?query={query}"
-    search_response = requests.get(search_url)
-    search_result = search_response.json()
+    try:
+        search_url = f"https://delirius-apiofc.vercel.app/search/applemusicv2?query={query}"
+        search_response = requests.get(search_url)
+        search_response.raise_for_status()
+        search_result = search_response.json()
+    except Exception as e:
+        await ms.edit_text(f"<code>Failed to search for the song: {str(e)}</code>")
+        return
 
-    if search_result['status'] and search_result['data']:
+    if search_result.get('status') and search_result.get('data'):
         song_details = search_result['data'][0]
         song_name = song_details['title']
         song_artist = song_details['artist']
@@ -35,42 +40,61 @@ async def apple_music(client: Client, message: Message):
 
         await ms.edit_text(f"<code>Found: {song_name} by {song_artist}</code>\n<code>Fetching download link...</code>")
 
-        download_url = f"https://delirius-apiofc.vercel.app/download/applemusicdl?url={song_url}"
-        download_response = requests.get(download_url)
-        download_result = download_response.json()
+        try:
+            download_url = f"https://delirius-apiofc.vercel.app/download/applemusicdl?url={song_url}"
+            download_response = requests.get(download_url)
+            download_response.raise_for_status()
+            download_result = download_response.json()
+        except Exception as e:
+            await ms.edit_text(f"<code>Failed to fetch download link: {str(e)}</code>")
+            return
 
-        if download_result['status']:
-            song_download_link = download_result['data']['download']
+        if download_result.get('status'):
+            song_download_link = download_result['data'].get('download')
+            if not song_download_link or 'undefined' in song_download_link:
+                await ms.edit_text("<code>Song isn't available.</code>")
+                return
+
             song_name = download_result['data']['name']
             song_thumb = download_result['data']['image']
 
             await ms.edit_text(f"<code>Downloading {song_name}...</code>")
+            try:
+                thumb_response = requests.get(song_thumb, stream=True)
+                thumb_response.raise_for_status()
+                with open(f"{song_name}.jpg", "wb") as f:
+                    f.write(thumb_response.content)
 
-            thumb_response = requests.get(song_thumb)
-            with open(f"{song_name}.jpg", "wb") as f:
-                f.write(thumb_response.content)
-
-            song_response = requests.get(song_download_link)
-            with open(f"{song_name}.mp3", "wb") as f:
-                f.write(song_response.content)
+                song_response = requests.get(song_download_link, stream=True)
+                song_response.raise_for_status()
+                with open(f"{song_name}.mp3", "wb") as f:
+                    f.write(song_response.content)
+            except Exception as e:
+                await ms.edit_text(f"<code>Failed to download the song: {str(e)}</code>")
+                return
 
             await ms.edit_text(f"<code>Uploading {song_name}...</code>")
             c_time = time.time()
             
-            await client.send_audio(
-                chat_id,
-                f"{song_name}.mp3",
-                caption=f"<b>Song Name:</b> {song_name}\n<b>Artist:</b> {song_artist}",
-                progress=progress,
-                progress_args=(ms, c_time, f"<code>Uploading {song_name}...</code>"),
-                thumb=f"{song_name}.jpg"
-            )
-            
+            try:
+                await client.send_audio(
+                    chat_id,
+                    f"{song_name}.mp3",
+                    caption=f"<b>Song Name:</b> {song_name}\n<b>Artist:</b> {song_artist}",
+                    progress=progress,
+                    progress_args=(ms, c_time, f"<code>Uploading {song_name}...</code>"),
+                    thumb=f"{song_name}.jpg"
+                )
+            except Exception as e:
+                await ms.edit_text(f"<code>Failed to upload the song: {str(e)}</code>")
+                return
+            finally:
+                if os.path.exists(f"{song_name}.jpg"):
+                    os.remove(f"{song_name}.jpg")
+                if os.path.exists(f"{song_name}.mp3"):
+                    os.remove(f"{song_name}.mp3")
+
             await ms.delete()
-            if os.path.exists(f"{song_name}.jpg"):
-                os.remove(f"{song_name}.jpg")
-            if os.path.exists(f"{song_name}.mp3"):
-                os.remove(f"{song_name}.mp3")
         else:
             await ms.edit_text(f"<code>Failed to fetch download link for {song_name}</code>")
     else:
