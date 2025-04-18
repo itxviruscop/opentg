@@ -1,3 +1,4 @@
+
 import json
 import requests
 import time
@@ -7,9 +8,11 @@ from pyrogram.types import Message
 from utils.misc import modules_help, prefix
 from utils.scripts import progress
 
-@Client.on_message(filters.command(["amusic", "applemusic"], prefix) & filters.me)
+@Client.on_message(filters.command(["amusic", "applemusic"], prefix))
 async def apple_music(client: Client, message: Message):
     chat_id = message.chat.id
+    is_self = message.from_user and message.from_user.is_self
+
     if len(message.command) > 1:
         query = message.text.split(maxsplit=1)[1]
     elif message.reply_to_message:
@@ -20,7 +23,10 @@ async def apple_music(client: Client, message: Message):
         )
         return
     
-    ms = await message.edit_text(f"<code>Searching for {query} on Apple Music...</code>")
+    if is_self:
+        ms = await message.edit_text(f"<code>Searching for {query} on Apple Music...</code>")
+    else:
+        ms = await message.reply(f"<code>Searching for {query} on Apple Music...</code>")
     
     try:
         search_url = f"https://delirius-apiofc.vercel.app/search/applemusicv2?query={query}"
