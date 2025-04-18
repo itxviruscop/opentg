@@ -8,80 +8,121 @@ from utils.misc import modules_help, prefix
 from utils.scripts import progress
 
 
-@Client.on_message(filters.command(["sdl", "spotify"], prefix) & filters.me)
+@Client.on_message(filters.command(["sdl", "spotify"], prefix))
 async def spotify_download(client: Client, message: Message):
     chat_id = message.chat.id
-    if len(message.command) > 1:
-        query = message.text.split(maxsplit=1)[1]
-    elif message.reply_to_message:
-        query = message.reply_to_message.text.strip()
-    else:
-        await message.edit(
-            f"<b>Usage:</b> <code>{prefix}spt [song name]</code>"
-        )
+    is_self = message.from_user and message.from_user.is_self
+
+    # Extract query from the command or replied message
+    query = (
+        message.text.split(maxsplit=1)[1]
+        if len(message.command) > 1
+        else message.reply_to_message.text.strip()
+        if message.reply_to_message
+        else None
+    )
+
+    if not query:
+        response = f"<b>Usage:</b> <code>{prefix}sdl [song name]</code>"
+        await (message.edit(response) if is_self else message.reply(response))
         return
 
-    ms = await message.edit_text(f"<code>Searching for {query} on Spotify...</code>")
+    # Initial searching message
+    status_message = await (
+        message.edit_text(f"<code>Searching for {query} on Spotify...</code>")
+        if is_self
+        else message.reply(f"<code>Searching for {query} on Spotify...</code>")
+    )
 
-    search_url = f"https://delirius-apiofc.vercel.app/search/spotify?q={query}&limit=2"
-    search_response = requests.get(search_url)
-    search_result = search_response.json()
+    # Search for the song
+    try:
+        search_result = requests.get(
+            f"https://delirius-apiofc.vercel.app/search/spotify?q={query}&limit=1"
+        ).json()
+        if not (search_result.get("status") and search_result.get("data")):
+            raise ValueError("No results found")
+    except Exception as e:
+        await status_message.edit_text(f"<code>Failed to search: {str(e)}</code>")
+        return
 
-    if search_result['status'] and search_result['data']:
-        song_details = search_result['data'][0]
-        song_name = song_details['title']
-        song_artist = song_details['artist']
-        song_thumb = song_details['image']
-        song_url = song_details['url']
+    song_details = search_result["data"][0]
+    song_name, song_artist, song_thumb, song_url = (
+        song_details["title"],
+        song_details["artist"],
+        song_details["image"],
+        song_details["url"],
+    )
 
-        await ms.edit_text(f"<code>Found: {song_name} by {song_artist}</code>\n<code>Fetching download link...</code>")
+    await status_message.edit_text(
+        f"<code>Found: {song_name} by {song_artist}</code>\n<code>Fetching download link...</code>"
+    )
 
-        download_url = f"https://delirius-apiofc.vercel.app/download/spotifydlv3?url={song_url}"
-        download_response = requests.get(download_url)
-        download_result = download_response.json()
+    # Fetch download link
+    try:
+        download_result = requests.get(
+            f"https://delirius-apiofc.vercel.app/download/spotifydlv3?url={song_url}"
+        ).json()
+        if not download_result.get("status"):
+            raise ValueError("Failed to fetch download link")
+    except Exception as e:
+        await status_message.edit_text(f"<code>Failed to fetch link: {str(e)}</code>")
+        return
 
-        if download_result['status']:
-            song_download_link = download_result['data']['url']
-            song_name = download_result['data']['title']
-            song_artist = download_result['data']['author']
-            song_thumb = download_result['data']['image']
+    song_download_link = download_result["data"].get("url")
+    song_name, song_artist, song_thumb = (
+        download_result["data"]["title"],
+        download_result["data"]["author"],
+        download_result["data"]["image"],
+    )
 
-            await ms.edit_text(f"<code>Downloading {song_name}...</code>")
+    if not song_download_link or not song_download_link.startswith("http"):
+        await status_message.edit_text("<code>Song isn't available for download.</code>")
+        return
 
-            thumb_path = None
-            if song_thumb:
-                thumb_response = requests.get(song_thumb)
-                thumb_path = f"{song_name}.jpg"
-                with open(thumb_path, "wb") as f:
-                    f.write(thumb_response.content)
+    await status_message.edit_text(f"<code>Downloading {song_name}...</code>")
 
-            song_path = f"{song_name}.mp3"
-            song_response = requests.get(song_download_link)
-            with open(song_path, "wb") as f:
-                f.write(song_response.content)
+    # Download the song and thumbnail
+    try:
+        # Download thumbnail
+        if song_thumb:
+            with open(f"{song_name}.jpg", "wb") as thumb_file:
+                thumb_file.write(requests.get(song_thumb, stream=True).content)
 
-            await ms.edit_text(f"<code>Uploading {song_name}...</code>")
-            c_time = time.time()
+        # Download song
+        song_response = requests.get(song_download_link, stream=True)
+        if "audio" not in song_response.headers.get("Content-Type", ""):
+            raise ValueError("Invalid audio file")
+        
+        with open(f"{song_name}.mp3", "wb") as song_file:
+            song_file.write(song_response.content)
+    except Exception as e:
+        await status_message.edit_text(f"<code>Failed to download: {str(e)}</code>")
+        return
 
-            await client.send_audio(
-                chat_id,
-                song_path,
-                caption=f"<b>Song Name:</b> {song_name}\n<b>Artist:</b> {song_artist}",
-                progress=progress,
-                progress_args=(ms, c_time, f"<code>Uploading {song_name}...</code>"),
-                thumb=thumb_path,
-            )
+    await status_message.edit_text(f"<code>Uploading {song_name}...</code>")
 
-            await ms.delete()
-            if thumb_path and os.path.exists(thumb_path):
-                os.remove(thumb_path)
-            if os.path.exists(song_path):
-                os.remove(song_path)
-        else:
-            await ms.edit_text(f"<code>Failed to fetch download link for {song_name}</code>")
-    else:
-        await ms.edit_text(f"<code>No results found for {query}</code>")
+    # Upload the song
+    try:
+        c_time = time.time()
+        await client.send_audio(
+            chat_id,
+            f"{song_name}.mp3",
+            caption=f"<b>Song Name:</b> {song_name}\n<b>Artist:</b> {song_artist}",
+            progress=progress,
+            progress_args=(status_message, c_time, f"<code>Uploading {song_name}...</code>"),
+            thumb=f"{song_name}.jpg" if os.path.exists(f"{song_name}.jpg") else None,
+        )
+    except Exception as e:
+        await status_message.edit_text(f"<code>Failed to upload: {str(e)}</code>")
+        return
+    finally:
+        # Cleanup downloaded files
+        for file in [f"{song_name}.jpg", f"{song_name}.mp3"]:
+            if os.path.exists(file):
+                os.remove(file)
+
+    await status_message.delete()
 
 modules_help["spotify"] = {
-    "spotify [song name]": "Search, download, and upload songs from Spotify"
+    "sdl [song name]": "search, download, and upload songs from Spotify"
 }
